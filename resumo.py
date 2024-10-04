@@ -1,10 +1,9 @@
+import os
 import pytubefix
 import ffmpeg
-import openai
+import google.generativeai as genai
 import sys
-
-openai.api_key = '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'
-
+genai.configure(api_key="AIzaSyBf7nGW5QwUiTWcZt-5EUliIDZvysmLunQ")
 url = sys.argv[1]
 filename = "audio.wav"
 
@@ -16,29 +15,23 @@ try:
         print("Baixando o áudio...")
         audio_stream.download(filename="temp_audio.mp4")
         print("Download concluído.")
-        
+
         print("Convertendo o áudio para WAV...")
         ffmpeg.input("temp_audio.mp4").output(filename, format='wav', loglevel="error").run()
         print("Conversão concluída.")
-        
-        with open(filename, "rb") as audio_file:
-            transcript = openai.Audio.transcribe(
-                model="whisper-1",
-                file=audio_file
-            )
-        
-        transcription_text = transcript["text"]
-        print("Transcrição completa:\n", transcription_text)
+        print(filename)
 
-        summary_response = openai.Completion.create(
-            engine="text-davinci-003",
-            prompt=f"Por favor, forneça um resumo para o seguinte texto:\n\n{transcription_text}",
-            max_tokens=200,
-            temperature=0.5
-        )
+        audio_file = genai.upload_file(filename)
 
-        summary = summary_response.choices[0].text.strip()
-        print("\nResumo:\n", summary)
+        model = genai.GenerativeModel(model_name="gemini-1.5-flash")
+
+        prompt = "transcription de music"
+
+        response = model.generate_content([prompt, audio_file])
+
+        with open("jorge.txt", "w", encoding="utf-8") as f:
+            f.write(response.text)
+        print(response.text)
 
     else:
         print("Nenhum stream de áudio disponível.")
